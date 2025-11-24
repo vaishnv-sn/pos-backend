@@ -10,10 +10,10 @@ import {
 
 const router = Router();
 
-router.get("/users/roles", requireAuth, listRoles);
-router.get("/users", requireAuth, listUsers);
-router.post("/users", requireAuth, createUser);
-router.put("/users/:id", requireAuth, updateUser);
-router.delete("/users/:id", requireAuth, deleteUser);
+router.post("/", requireAuth, createUser);
+router.get("/", requireAuth, listUsers);
+router.put("/:id", requireAuth, updateUser);
+router.delete("/:id", requireAuth, deleteUser);
+router.get("/roles", requireAuth, listRoles);
 
 export default router;
