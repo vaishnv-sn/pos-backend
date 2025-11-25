@@ -1,46 +1,49 @@
-export const errorHandler = (err, req, res, next) => {
-  // Log detailed error information for debugging
-  console.error({
+// middlewares/errorHandler.js
+import AppError from "../utils/AppError.js";
+
+export default (err, req, res, next) => {
+  console.error("🔥 ERROR:", {
     message: err.message,
     stack: err.stack,
+    path: req.originalUrl,
     method: req.method,
-    url: req.url,
-    userId: req.user?.id || "unauthenticated",
+    user: req.user?.id || "unauthenticated",
     timestamp: new Date().toISOString(),
   });
 
-  // Handle specific error types
+  // If error is not operational → maybe a bug
+  if (!err.isOperational) {
+    err = new AppError("Something went wrong", 500);
+  }
+
+  // Handle mongoose bad ObjectId
+  if (err.name === "CastError") {
+    err = new AppError("Invalid ID format", 400);
+  }
+
+  // Handle missing fields / validation error
+  if (err.name === "ValidationError") {
+    const msg = Object.values(err.errors)
+      .map((el) => el.message)
+      .join(", ");
+    err = new AppError(msg, 400);
+  }
+
+  // Duplicate key error
+  if (err.code === 11000) {
+    err = new AppError("Duplicate field value", 400);
+  }
+
+  // JWT Errors
   if (err.name === "JsonWebTokenError") {
-    return res
-      .status(401)
-      .json({ error: "Invalid token. Please log in again." });
+    err = new AppError("Invalid token. Please log in again.", 401);
   }
-
   if (err.name === "TokenExpiredError") {
-    return res
-      .status(401)
-      .json({ error: "Access token expired. Please refresh your token." });
+    err = new AppError("Token expired. Please log in again.", 401);
   }
 
-  if (err.name === "SyntaxError" && err.message.includes("JSON")) {
-    return res.status(400).json({ error: "Invalid JSON in request body." });
-  }
-
-  if (err.code === "SQLITE_ERROR") {
-    // Handle SQLite-specific errors (adjust based on your SQLite library)
-    return res
-      .status(500)
-      .json({ error: "Database error occurred. Please try again later." });
-  }
-
-  // Handle route-specific errors already sent with a status code
-  if (res.statusCode >= 400 && res.statusCode < 500) {
-    // Avoid overwriting specific errors (e.g., 400, 401, 423 from createBid)
-    return res.json({ error: err.message });
-  }
-
-  // Default to 500 for unhandled errors
-  res.status(500).json({ error: "Internal Server Error" });
+  return res.status(err.statusCode).json({
+    status: err.status,
+    message: err.message,
+  });
 };
-
-export default errorHandler;
