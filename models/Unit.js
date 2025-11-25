@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const unitSchema = new mongoose.Schema(
   {
-    name: { type: String, required: true, trim: true },
-    conversionFactor: { type: Number, default: 1 }, // secondary → primary
+    name: { type: String, required: true, unique: true, trim: true },
+    short: { type: String, trim: true },
   },
   { timestamps: true }
 );

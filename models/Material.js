@@ -7,18 +7,35 @@ const materialSchema = new mongoose.Schema(
     code: { type: String, trim: true, index: true },
     barcode: { type: String, trim: true, index: true },
 
-    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
 
-    unitPrimary: { type: String, required: true },
-    unitSecondary: { type: String },
+    unitPrimary: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Unit",
+      required: true,
+    },
+    unitSecondary: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Unit",
+    },
     conversionFactor: { type: Number, default: 1 },
 
     purchaseRate: Number,
     retailRate: Number,
     wholesaleRate: Number,
 
-    taxRate: { type: Number, default: 0 }, // %
-    includeTax: { type: Boolean, default: true },
+    taxRate: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tax",
+      required: true,
+    },
+    purchaseRateIncludeTax: { type: Boolean, default: true },
+    retailRateIncludeTax: { type: Boolean, default: true },
+    wholesaleRateIncludeTax: { type: Boolean, default: true },
 
     batchEnabled: { type: Boolean, default: false },
     serialNumberEnabled: { type: Boolean, default: false },

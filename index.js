@@ -11,7 +11,9 @@ import mongoose from "mongoose";
 import authRoute from "./routes/auth.route.js";
 import usersRoute from "./routes/users.route.js";
 import categoryRoute from "./routes/category.route.js";
-// import materialRoute from "./routes/material.route.js";
+import materialRoute from "./routes/material.route.js";
+import metaRoute from "./routes/meta.route.js";
+
 import errorHandler from "./middlewares/errorHandler.js";
 import connectDB from "./config/db.js";
 
@@ -64,7 +66,8 @@ app.use(morgan("combined"));
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", usersRoute);
 app.use("/api/v1/category", categoryRoute);
-// app.use("/api/v1/material", materialRoute);
+app.use("/api/v1/material", materialRoute);
+app.use("/api/v1/meta", metaRoute);
 
 // ----- ERROR HANDLER -----
 app.use(errorHandler);
@@ -74,7 +77,6 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
 
-// Graceful shutdown
 process.on("SIGTERM", () => {
   mongoose.connection.close();
 });
