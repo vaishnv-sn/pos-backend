@@ -5,15 +5,13 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import compression from "compression";
-import mongoSanitize from "express-mongo-sanitize";
-import xss from "xss-clean";
 import morgan from "morgan";
 import mongoose from "mongoose";
 
 import authRoute from "./routes/auth.route.js";
 import usersRoute from "./routes/users.route.js";
 import categoryRoute from "./routes/category.route.js";
-import materialRoute from "./routes/material.route.js";
+// import materialRoute from "./routes/material.route.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import connectDB from "./config/db.js";
 
@@ -28,8 +26,6 @@ connectDB();
 
 // ----- SECURITY -----
 app.use(helmet());
-app.use(mongoSanitize());
-app.use(xss());
 app.use(compression());
 
 // ----- CORS -----
@@ -68,7 +64,7 @@ app.use(morgan("combined"));
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/users", usersRoute);
 app.use("/api/v1/category", categoryRoute);
-app.use("/api/v1/material", materialRoute);
+// app.use("/api/v1/material", materialRoute);
 
 // ----- ERROR HANDLER -----
 app.use(errorHandler);
