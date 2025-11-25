@@ -13,10 +13,10 @@ import {
 const router = Router();
 
 router.get("/", requireAuth, getItems);
-router.get("/search", requireAuth, searchItems);
-router.get("/:id", requireAuth, getItemById);
 router.post("/", requireAuth, createItem);
+router.get("/:id", requireAuth, getItemById);
 router.put("/:id", requireAuth, updateItem);
 router.delete("/:id", requireAuth, deleteItem);
+router.get("/search", requireAuth, searchItems);
 
 export default router;
