@@ -2,6 +2,7 @@ import asyncHandler from "../utils/asyncHandler.js";
 import AppError from "../utils/AppError.js";
 import Material from "../models/Material.js";
 import Category from "../models/Category.js";
+import mongoose from "mongoose";
 
 /* ----------------------------------------------
    GET /api/v1/material?page=1&limit=20&category=ID&lowStock=true
@@ -9,30 +10,104 @@ import Category from "../models/Category.js";
 export const getItems = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, category, lowStock, search } = req.query;
 
-  const query = {};
+  const query = [];
 
-  if (category) query.categoryId = category;
+  // MATCH
+  const matchStage = {};
 
-  if (lowStock) {
-    query.stockQty = { $lt: 10 };
-  }
+  if (category) matchStage.categoryId = new mongoose.Types.ObjectId(category);
 
-  if (search) {
-    query.$text = { $search: search };
-  }
+  if (lowStock) matchStage.stockQty = { $lt: 10 };
 
-  const skip = (page - 1) * limit;
+  if (search) matchStage.$text = { $search: search };
 
-  const [items, total] = await Promise.all([
-    Material.find(query)
-      .skip(skip)
-      .limit(Number(limit))
-      .sort({ createdAt: -1 }),
+  query.push({ $match: matchStage });
 
-    Material.countDocuments(query),
-  ]);
+  // LOOKUPS
+  query.push(
+    {
+      $lookup: {
+        from: "categories",
+        localField: "categoryId",
+        foreignField: "_id",
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
 
-  return res.json({
+    {
+      $lookup: {
+        from: "units",
+        localField: "unitPrimary",
+        foreignField: "_id",
+        as: "unitPrimary",
+      },
+    },
+    { $unwind: "$unitPrimary" },
+
+    {
+      $lookup: {
+        from: "units",
+        localField: "unitSecondary",
+        foreignField: "_id",
+        as: "unitSecondary",
+      },
+    },
+    { $unwind: { path: "$unitSecondary", preserveNullAndEmptyArrays: true } },
+
+    {
+      $lookup: {
+        from: "taxes",
+        localField: "taxRate",
+        foreignField: "_id",
+        as: "tax",
+      },
+    },
+    { $unwind: "$tax" },
+
+    {
+      $lookup: {
+        from: "warehouses",
+        localField: "warehouseId",
+        foreignField: "_id",
+        as: "warehouse",
+      },
+    },
+    { $unwind: { path: "$warehouse", preserveNullAndEmptyArrays: true } }
+  );
+
+  // PROJECT OUTPUT
+  query.push({
+    $project: {
+      name: 1,
+      hsn: 1,
+      code: 1,
+      barcode: 1,
+      purchaseRate: 1,
+      retailRate: 1,
+      wholesaleRate: 1,
+
+      category: "$category.name",
+      unitPrimary: "$unitPrimary.name",
+      unitSecondary: "$unitSecondary.name",
+      conversionFactor: 1,
+      warehouse: "$warehouse.name",
+      taxRate: "$tax.rate",
+
+      batchEnabled: 1,
+      serialNumberEnabled: 1,
+      discount: 1,
+      imageUrl: 1,
+    },
+  });
+
+  // PAGINATION
+  query.push({ $skip: (page - 1) * limit }, { $limit: Number(limit) });
+
+  const items = await Material.aggregate(query);
+  const total = await Material.countDocuments(matchStage);
+
+  res.json({
     success: true,
     data: items,
     pagination: {
