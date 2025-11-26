@@ -3,11 +3,35 @@ import Category from "../models/Category.js";
 import AppError from "../utils/AppError.js";
 
 export const getCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find().sort({ name: 1 });
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const search = req.query.search || "";
+
+  const skip = (page - 1) * limit;
+
+  const searchQuery = search ? { name: { $regex: search, $options: "i" } } : {};
+
+  const totalCount = await Category.countDocuments(searchQuery);
+
+  const categories = await Category.find(searchQuery)
+    .sort({ name: 1 })
+    .skip(skip)
+    .limit(limit);
+
+  const hasMore = skip + categories.length < totalCount;
+  const totalPages = Math.ceil(totalCount / limit);
 
   res.status(200).json({
     success: true,
     data: categories,
+    pagination: {
+      page,
+      limit,
+      totalCount,
+      totalPages,
+      hasMore,
+      currentCount: categories.length,
+    },
   });
 });
 
