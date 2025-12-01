@@ -12,7 +12,9 @@ dotenv.config();
 
 const seed = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI, {
+      dbName: process.env.DB_NAME,
+    });
     console.log("📦 Connected to MongoDB\n");
 
     // 1. Clear existing data
