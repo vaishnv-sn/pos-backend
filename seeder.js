@@ -7,6 +7,7 @@ import Unit from "./models/Unit.js";
 import Tax from "./models/Tax.js";
 import Category from "./models/Category.js";
 import Material from "./models/Material.js";
+import User from "./models/User.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ const seed = async () => {
       Tax.deleteMany({}),
       Category.deleteMany({}),
       Material.deleteMany({}),
+      User.deleteMany({}),
     ]);
     console.log("✅ Data cleared.\n");
 
@@ -92,7 +94,36 @@ const seed = async () => {
     }, {});
     console.log(`✅ Seeded ${categories.length} Categories.\n`);
 
-    // 6. Seed Materials
+    // 6. Seed Users
+    console.log("👥 Seeding Users...");
+    const users = await User.create([
+      {
+        name: "Admin User",
+        email: "admin@pos.com",
+        phone: "7034753806",
+        password: "admin123",
+        role: "admin",
+        isActive: true,
+      },
+      {
+        name: "Cashier User",
+        email: "cashier@pos.com",
+        password: "cashier123",
+        role: "cashier",
+        isActive: true,
+      },
+      {
+        name: "Manager User",
+        phone: "9876543210",
+        email: "manager@pos.com",
+        password: "manager123",
+        role: "manager",
+        isActive: true,
+      },
+    ]);
+    console.log(`✅ Seeded ${users.length} Users.\n`);
+
+    // 7. Seed Materials
     console.log("🧱 Seeding Materials...");
     const materialsData = [
       // MEAT

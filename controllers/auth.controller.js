@@ -1,8 +1,7 @@
 import jwt from "jsonwebtoken";
 import asyncHandler from "../utils/asyncHandler.js";
 import AppError from "../utils/AppError.js";
-import bcrypt from "bcryptjs";
-import pool from "../config/db.js";
+import User from "../models/User.js";
 
 const signJwt = (payload, options = {}) => {
   const secret = process.env.JWT_SECRET;
@@ -22,7 +21,72 @@ const cookieOpts = () => {
 };
 
 export const login = asyncHandler(async (req, res) => {
-  console.log(req.email, req.password);
+  const { identifier, password } = req.body;
+
+  // Validate required fields
+  if (!identifier || !password) {
+    return res.status(400).json({
+      message: "Email/phone and password are required",
+    });
+  }
+
+  // Find user by email or phone (case-insensitive for email)
+  const user = await User.findOne({
+    $or: [
+      { email: identifier.toLowerCase() },
+      { phone: identifier },
+    ],
+    isActive: true,
+  });
+
+  // Check if user exists and verify password
+  if (!user || !(await user.comparePassword(password))) {
+    return res.status(401).json({
+      message: "Invalid email/phone or password",
+    });
+  }
+
+  // Generate JWT token
+  const token = signJwt({
+    userId: user._id,
+    email: user.email,
+    role: user.role,
+  });
+
+  // Return user object without password
+  const userResponse = {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+  };
+
+  res.status(200).json({
+    token,
+    user: userResponse,
+  });
+});
+
+export const verify = asyncHandler(async (req, res) => {
+  // User is already attached to req.user by requireAuth middleware
+  const user = await User.findById(req.user.id).select("-password");
+
+  if (!user || !user.isActive) {
+    return res.status(401).json({
+      message: "Invalid or expired token",
+    });
+  }
+
+  res.status(200).json({
+    user: {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      phone: user.phone,
+      role: user.role,
+    },
+  });
 });
 
 export const refreshToken = asyncHandler(async (req, res) => {
