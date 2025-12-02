@@ -19,8 +19,14 @@ export const getItems = asyncHandler(async (req, res) => {
 
   if (lowStock) matchStage.stockQty = { $lt: 10 };
 
-  if (search) matchStage.$text = { $search: search };
-
+  if (search) {
+    matchStage.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { code: { $regex: search, $options: "i" } },
+      { barcode: { $regex: search, $options: "i" } },
+      { hsn: { $regex: search, $options: "i" } },
+    ];
+  }
   query.push({ $match: matchStage });
 
   // LOOKUPS

@@ -53,6 +53,10 @@ const materialSchema = new mongoose.Schema(
 );
 
 // Helpful search index
-materialSchema.index({ name: "text", barcode: "text", code: "text" });
+// materialSchema.index({ name: "text", barcode: "text", code: "text" });
+
+materialSchema.index({ name: 1 });
+materialSchema.index({ barcode: 1 });
+materialSchema.index({ code: 1 });
 
 export default mongoose.model("Material", materialSchema);
