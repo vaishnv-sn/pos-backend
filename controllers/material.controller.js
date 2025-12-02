@@ -120,6 +120,107 @@ export const getItems = asyncHandler(async (req, res) => {
 });
 
 /* ----------------------------------------------
+   GET /api/v1/material/barcode/:barcode
+---------------------------------------------- */
+export const getItemByBarcode = asyncHandler(async (req, res) => {
+  const { barcode } = req.params;
+
+  if (!barcode) throw new AppError("Barcode is required", 400);
+
+  const query = [];
+
+  query.push({ $match: { barcode: barcode } });
+
+  query.push(
+    {
+      $lookup: {
+        from: "categories",
+        localField: "categoryId",
+        foreignField: "_id",
+        as: "category",
+      },
+    },
+    { $unwind: "$category" },
+
+    {
+      $lookup: {
+        from: "units",
+        localField: "unitPrimary",
+        foreignField: "_id",
+        as: "unitPrimary",
+      },
+    },
+    { $unwind: "$unitPrimary" },
+
+    {
+      $lookup: {
+        from: "units",
+        localField: "unitSecondary",
+        foreignField: "_id",
+        as: "unitSecondary",
+      },
+    },
+    { $unwind: { path: "$unitSecondary", preserveNullAndEmptyArrays: true } },
+
+    {
+      $lookup: {
+        from: "taxes",
+        localField: "taxRate",
+        foreignField: "_id",
+        as: "tax",
+      },
+    },
+    { $unwind: "$tax" },
+
+    {
+      $lookup: {
+        from: "warehouses",
+        localField: "warehouseId",
+        foreignField: "_id",
+        as: "warehouse",
+      },
+    },
+    { $unwind: { path: "$warehouse", preserveNullAndEmptyArrays: true } }
+  );
+
+  // PROJECT OUTPUT
+  query.push({
+    $project: {
+      name: 1,
+      hsn: 1,
+      code: 1,
+      barcode: 1,
+      purchaseRate: 1,
+      retailRate: 1,
+      wholesaleRate: 1,
+
+      category: "$category.name",
+      unitPrimary: "$unitPrimary.name",
+      unitSecondary: "$unitSecondary.name",
+      conversionFactor: 1,
+      warehouse: "$warehouse.name",
+      taxRate: "$tax.rate",
+
+      batchEnabled: 1,
+      serialNumberEnabled: 1,
+      discount: 1,
+      imageUrl: 1,
+    },
+  });
+
+  const items = await Material.aggregate(query);
+
+  if (!items.length) {
+    throw new AppError("Item not found", 404);
+  }
+
+  res.json({
+    success: true,
+    data: items[0],
+  });
+});
+
+/* ----------------------------------------------
    GET /api/v1/material/search?query=dav
 ---------------------------------------------- */
 export const searchItems = asyncHandler(async (req, res) => {

@@ -8,6 +8,8 @@ import {
   createItem,
   updateItem,
   deleteItem,
+  getItemByBarcode,
+
 } from "../controllers/material.controller.js";
 
 const router = Router();
@@ -17,6 +19,7 @@ router.post("/", createItem);
 router.get("/:id", getItemById);
 router.put("/:id", updateItem);
 router.delete("/:id", deleteItem);
+router.get("/barcode/:barcode", getItemByBarcode);
 router.get("/search", searchItems);
 
 export default router;
